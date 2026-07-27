@@ -68,4 +68,4 @@ Or specify a custom version tag:
 
 ## 📜 License
 
-MIT License.
+[Apache License 2.0](LICENSE)
