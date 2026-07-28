@@ -25,7 +25,7 @@ Get-Process "Power Automate Visualizer" -ErrorAction SilentlyContinue | Stop-Pro
 Remove-Item -Recurse -Force dist_electron -ErrorAction SilentlyContinue
 npm run dist
 
-$artifacts = Get-ChildItem -Path "dist_electron" -Include "*.exe","*.zip" -File | Select-Object -ExpandProperty FullName
+$artifacts = Get-ChildItem -Path "dist_electron\*" -Include "*.exe","*.zip" -File | Select-Object -ExpandProperty FullName
 
 if ($artifacts.Count -eq 0) {
     Write-Error "Build failed: No release artifacts found in 'dist_electron'"
