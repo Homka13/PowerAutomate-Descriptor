@@ -59,6 +59,9 @@ if ($releaseExists) {
         --notes "Power Automate Visualizer $Tag - Includes Portable EXE, 1-Click Installer, and Zip package."
 }
 
+# Ensure release is published (not draft)
+gh release edit $Tag --draft=false
+
 Write-Host "========================================" -ForegroundColor Green
 Write-Host " Release $Tag published successfully!" -ForegroundColor Green
 Write-Host " Check it out at: https://github.com/Homka13/PowerAutomate-Descriptor/releases" -ForegroundColor Green
