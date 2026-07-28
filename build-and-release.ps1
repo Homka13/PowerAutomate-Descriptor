@@ -19,8 +19,10 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " Building & Releasing Power Automate Visualizer ($Tag)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-# 2. Build the Portable EXE
-Write-Host "[1/3] Running 'npm run dist' to build Portable EXE..." -ForegroundColor Yellow
+# 2. Build the Portable EXE & Installers
+Write-Host "[1/3] Running 'npm run dist' to build targets..." -ForegroundColor Yellow
+Get-Process "Power Automate Visualizer" -ErrorAction SilentlyContinue | Stop-Process -Force
+Remove-Item -Recurse -Force dist_electron -ErrorAction SilentlyContinue
 npm run dist
 
 $artifacts = Get-ChildItem -Path "dist_electron" -Include "*.exe","*.zip" -File | Select-Object -ExpandProperty FullName
