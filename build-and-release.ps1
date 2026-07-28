@@ -1,5 +1,6 @@
 param (
-    [string]$Tag = ""
+    [string]$Tag = "",
+    [string]$Notes = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +14,24 @@ if ([string]::IsNullOrWhiteSpace($Tag)) {
     } else {
         $Tag = "v1.0.0"
     }
+}
+
+# Generate rich notes from git log if none provided
+if ([string]::IsNullOrWhiteSpace($Notes)) {
+    $commits = git log -n 5 --pretty=format:"- %s"
+    $Notes = @"
+## 🚀 Що нового у версії $Tag
+
+### 📝 Останні зміни:
+$commits
+
+---
+
+### 📦 Завантаження:
+- **Portable EXE**: Запуск без встановлення (один автономний файл).
+- **Setup EXE**: Інсталятор 1-клік із ярликами в Робочому столі.
+- **ZIP**: Повний розпакований архів.
+"@
 }
 
 Write-Host "========================================" -ForegroundColor Cyan
@@ -53,10 +72,11 @@ if ($releaseExists) {
     foreach ($art in $artifacts) {
         gh release upload $Tag $art --clobber
     }
+    gh release edit $Tag --notes $Notes
 } else {
     gh release create $Tag $artifacts `
         --title "Power Automate Visualizer $Tag" `
-        --notes "Power Automate Visualizer $Tag - Includes Portable EXE, 1-Click Installer, and Zip package."
+        --notes $Notes
 }
 
 # Ensure release is published (not draft)
