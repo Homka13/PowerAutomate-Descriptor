@@ -1,7 +1,7 @@
 {
   "name": "power-automate-visualizer",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "Apache-2.0",
   "type": "module",
   "main": "electron/main.cjs",
@@ -29,11 +29,31 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
     "portable": {
-      "artifactName": "${productName}-Portable.${ext}"
+      "artifactName": "${productName}-Portable-${version}.${ext}",
+      "requestExecutionLevel": "user"
     }
   },
   "dependencies": {

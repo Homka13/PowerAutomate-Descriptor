@@ -23,14 +23,17 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "[1/3] Running 'npm run dist' to build Portable EXE..." -ForegroundColor Yellow
 npm run dist
 
-$exePath = "dist_electron\Power Automate Visualizer-Portable.exe"
+$artifacts = Get-ChildItem -Path "dist_electron" -Include "*.exe","*.zip" -File | Select-Object -ExpandProperty FullName
 
-if (-not (Test-Path $exePath)) {
-    Write-Error "Build failed: Exe file not found at '$exePath'"
+if ($artifacts.Count -eq 0) {
+    Write-Error "Build failed: No release artifacts found in 'dist_electron'"
     exit 1
 }
 
-Write-Host "[2/3] Built executable successfully: $exePath" -ForegroundColor Green
+Write-Host "[2/3] Built release artifacts successfully:" -ForegroundColor Green
+foreach ($art in $artifacts) {
+    Write-Host "  - $art" -ForegroundColor Green
+}
 
 # 3. Create GitHub Release
 Write-Host "[3/3] Publishing Release '$Tag' to GitHub..." -ForegroundColor Yellow
@@ -44,12 +47,14 @@ try {
 }
 
 if ($releaseExists) {
-    Write-Host "Release '$Tag' already exists. Uploading asset..." -ForegroundColor Yellow
-    gh release upload $Tag "$exePath#Power Automate Visualizer-Portable.exe" --clobber
+    Write-Host "Release '$Tag' already exists. Uploading assets..." -ForegroundColor Yellow
+    foreach ($art in $artifacts) {
+        gh release upload $Tag $art --clobber
+    }
 } else {
-    gh release create $Tag "$exePath#Power Automate Visualizer-Portable.exe" `
+    gh release create $Tag $artifacts `
         --title "Power Automate Visualizer $Tag" `
-        --notes "Standalone Portable Executable for Windows. Download and run without installation."
+        --notes "Power Automate Visualizer $Tag - Includes Portable EXE, 1-Click Installer, and Zip package."
 }
 
 Write-Host "========================================" -ForegroundColor Green
