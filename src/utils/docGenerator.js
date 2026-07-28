@@ -27,6 +27,12 @@ export function generateMarkdownDoc(analyzedFlow) {
   lines.push(`| **Наявність обробки помилок (Try-Catch / RunAfter)** | ${summary.hasErrorHandling ? '✅ Так (наявні блоки при помилках)' : '⚠️ Ні (відсутні специфічні гілки помилок)'} |`);
   lines.push('');
 
+  // Narrative Scenario Section
+  lines.push('## 💡 Сценарій бізнес-логіки (Простими словами)');
+  lines.push('');
+  lines.push(generateNarrativeSummary(analyzedFlow));
+  lines.push('');
+
   // Triggers Section
   lines.push('## ⚡ Тригери (Початок потоку)');
   lines.push('');
@@ -136,4 +142,79 @@ function buildTextTree(actions, lines, indent) {
       buildTextTree(act.children, lines, childIndent + '│   ');
     }
   });
+}
+
+function generateNarrativeSummary(analyzedFlow) {
+  const { triggers, connectors, variables, actionsList } = analyzedFlow;
+  const steps = [];
+
+  // 1. Trigger phase
+  if (triggers.length > 0) {
+    const trg = triggers[0];
+    if (trg.recurrence) {
+      steps.push(`**Автоматичний запуск:** Потік запускається за розкладом (${trg.recurrence.interval} ${trg.recurrence.frequency}).`);
+    } else if (trg.type === 'Request') {
+      steps.push(`**Запуск по події / API:** Потік очікує зовнішній HTTP-запит або запускається вручну користувачем.`);
+    } else {
+      steps.push(`**Запуск за тригером:** Потік спрацьовує на подію у сервісі \`${trg.typeLabel || trg.name}\`.`);
+    }
+  }
+
+  // 2. Data Preparation / Variables
+  if (variables.length > 0) {
+    const initVars = variables.map(v => `\`${v.name}\``).join(', ');
+    steps.push(`**Підготовка змінних:** Ініціалізуються змінні (${initVars}) для формування підсумкового вмісту (наприклад, HTML-таблиць чи списків).`);
+  }
+
+  // 3. Data Retrieval / External API actions
+  const getActions = actionsList.filter(a => 
+    a.name.toLowerCase().includes('list') || 
+    a.name.toLowerCase().includes('get') ||
+    a.name.toLowerCase().includes('fetch') ||
+    a.name.toLowerCase().includes('select')
+  );
+  if (getActions.length > 0) {
+    const names = getActions.slice(0, 3).map(a => `\`${a.name}\``).join(', ');
+    const connStr = connectors.length > 0 ? `із сервісів **${connectors.join(', ')}**` : 'із зовнішніх баз даних';
+    steps.push(`**Отримання даних:** Потік робить вибірку записів ${connStr} (дії: ${names}).`);
+  }
+
+  // 4. Loops & Processing
+  const loops = actionsList.filter(a => a.type === 'Foreach' || a.type === 'Until');
+  const conditions = actionsList.filter(a => a.type === 'If' || a.type === 'Switch');
+  if (loops.length > 0 || conditions.length > 0) {
+    let procDesc = '**Обробка та фільтрація даних:** ';
+    if (loops.length > 0) procDesc += `Виконується перебір записів у циклах (${loops.map(l => `\`${l.name}\``).join(', ')}). `;
+    if (conditions.length > 0) procDesc += `Застосовується умовна бізнес-логіка та перевірка розгалужень (${conditions.map(c => `\`${c.name}\``).join(', ')}).`;
+    steps.push(procDesc.trim());
+  }
+
+  // 5. Accumulation / Transformations
+  const appends = actionsList.filter(a => 
+    a.name.toLowerCase().includes('append') || 
+    a.name.toLowerCase().includes('compose') ||
+    a.name.toLowerCase().includes('set_')
+  );
+  if (appends.length > 0) {
+    steps.push(`**Формування виводу:** Отримані дані форматуються, накопичуються та упаковуються у підсумкові змінні чи HTML-структури (дії: ${appends.slice(0, 3).map(a => `\`${a.name}\``).join(', ')}).`);
+  }
+
+  // 6. Outputs / Emails / Notifications
+  const outputActions = actionsList.filter(a => 
+    a.name.toLowerCase().includes('email') || 
+    a.name.toLowerCase().includes('send') || 
+    a.name.toLowerCase().includes('post') || 
+    a.name.toLowerCase().includes('create') ||
+    a.name.toLowerCase().includes('response')
+  );
+  if (outputActions.length > 0) {
+    const names = outputActions.slice(0, 3).map(a => `\`${a.name}\``).join(', ');
+    steps.push(`**Завершення та розсилка:** Потік відправляє згенерований звіт чи повідомлення електронною поштою / у месенджер (дії: ${names}).`);
+  }
+
+  if (steps.length === 0) {
+    return '_Потік виконує послідовний набір дій без виявлених складних паттернів._';
+  }
+
+  return steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
 }
